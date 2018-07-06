@@ -3,10 +3,7 @@
   "version": "1.0.0-alpha.2",
   "description": "Convert Asciidoc documents to OpenDocument (ODT) files.",
   "main": "index.js",
-  "dependencies": {
-    "simple-odf": "^0.5.0",
-    "xmldom": "^0.1.27"
-  },
+  "dependencies": {},
   "devDependencies": {
     "eslint": "^5.0.1"
   },
