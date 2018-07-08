@@ -54,6 +54,18 @@ module.exports = {
     else if (node.getType() === 'monospaced') {
       styleName = 'CodeDansTexte';
     }
+    else if (node.getType() === 'strong') {
+      styleName = 'T7';
+    }
+    else if (node.getType() === 'emphasis') {
+      styleName = 'T4';
+    }
+    else if (node.getRole() === 'line-through') {
+      styleName = 'T8';
+    }
+    else if (node.getRole() === 'URL' && node.getParent().node_name === 'admonition') {
+      styleName = 'RemarqueURL';
+    }
     else if (node.getRole() === 'bare') {
       pre = '<![CDATA[';
       post = ']]>';
@@ -72,7 +84,12 @@ module.exports = {
       pre = '<![CDATA[';
       post = ']]>';
     }
-    return `<text:span text:style-name="${node.getRole()}">${pre}${node.getText()}${post}</text:span>`;
+
+    if (node.getText()) {
+      return `<text:span text:style-name="${node.getRole()}">${pre}${node.getText()}${post}</text:span>`;
+    }
+
+    return '';
   },
 
   inline_break: ({node}) => {
@@ -80,7 +97,7 @@ module.exports = {
   },
 
   inline_kbd: ({node}) => {
-    return `<text:span text:style-name="CodeDansTexte">${node.getText()}</text:span>`;
+    return `<text:span text:style-name="Menu">[${node.getAttribute('keys').join('+')}]</text:span>`;
   },
 
   inline_button: ({node}) => {
@@ -89,28 +106,34 @@ module.exports = {
 
   listing: ({node}) => {
     let title = '';
+    const styleName = node.getParent().node_name === 'admonition' ? 'RemarqueCode' : 'Code';
 
     if (node.getTitle()) {
-      title = `<text:p text:style-name="CodeTitre">${node.getTitle()}</text:p>`;
+      const styleName = node.getParent().node_name === 'admonition' ? 'Remarque' : 'CodeTitre';
+      title = `<text:p text:style-name="${styleName}">${node.getTitle()}</text:p>`;
     }
 
     const code = node.getContent().split('\n').map(line => {
-      return `<text:p text:style-name="Code">${line.replace(/&&/g, '&amp;&amp;').replace(/(^\s+|\s+(<text:span))/g, (m, chars, after) => `<text:s text:c="${chars.length}"/>${after || ''}`)}</text:p>`;
+      return `<text:p text:style-name="${styleName}">${line.replace(/&&/g, '&amp;&amp;').replace(/(^\s+|\s+(<text:span))/g, (m, chars, after) => `<text:s text:c="${chars.length}"/>${after || ''}`)}</text:p>`;
     }).join('');
 
     return `${title}${code}`;
   },
 
   ulist: ({node}) => {
+    const styleName = node.getParent().node_name === 'admonition' ? 'RemarquePuce' : 'ListeANumero';
+
     const items = node.getItems().map(item => `<text:list-item>
-<text:p text:style-name="ListeAPuce">${item.getText()}</text:p>
+<text:p text:style-name="${styleName}">${item.getText()}</text:p>
 </text:list-item>`).join('');
 
     return `<text:list text:style-name="List_20_1">${items}</text:list>`;
   },
 
   olist: ({node}) => {
-    return node.getItems().map((item, i) => `<text:p text:style-name="ListeANumero">${i+1}.<text:tab/>${item.getText()}</text:p>`).join('');
+    const styleName = node.getParent().node_name === 'admonition' ? 'RemarqueNumero' : 'ListeANumero';
+
+    return node.getItems().map((item, i) => `<text:p text:style-name="${styleName}">${i+1}.<text:tab/>${item.getText()}</text:p>`).join('');
   },
 
   dlist: ({node}) => {
