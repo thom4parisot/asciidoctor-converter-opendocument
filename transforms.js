@@ -48,7 +48,13 @@ module.exports = {
     let post = '';
     let styleName = node.getRole() || node.getType();
 
-    if (node.getRole() === 'bare') {
+    if (node.getType() === 'mark') {
+      styleName = 'CodeExergue';
+    }
+    else if (node.getType() === 'monospaced') {
+      styleName = 'CodeDansTexte';
+    }
+    else if (node.getRole() === 'bare') {
       pre = '<![CDATA[';
       post = ']]>';
       styleName = 'CodeDansTexte';
