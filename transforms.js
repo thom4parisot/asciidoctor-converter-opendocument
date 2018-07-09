@@ -1,6 +1,12 @@
 'use strict';
 
-const {dirname, basename} = require('path');
+/* global Opal */
+
+const {dirname, basename, join} = require('path');
+
+const bookmark = (id) => {
+  return id !== Opal.nil ? `<text:bookmark text:name="ref-${id}" />` : '';
+};
 
 module.exports = {
   document: ({node, styles}) => {
@@ -39,12 +45,12 @@ module.exports = {
       pre = `<text:p text:style-name="ChapitreNumero">${node.getDocument().getAttribute('chapternumber')}</text:p>`;
     }
 
-    return `${pre}<text:h text:style-name="${style}" text:outline-level="${node.getLevel()}"><text:bookmark text:name="ref-${id}" />${node.getTitle()}</text:h>${node.getContent()}`;
+    return `${bookmark(id)}${pre}<text:h text:style-name="${style}" text:outline-level="${node.getLevel()}">${node.getTitle()}</text:h>${node.getContent()}`;
   },
   paragraph: ({node}) => {
     const style = node.getParent().node_name === 'admonition' ? 'Remarque' : 'TexteCourant';
 
-    return `<text:p text:style-name="${style}">${node.getContent().replace(/(<text:line-break\/>)\n/gm, '$1')}</text:p>`;
+    return `${bookmark(node.getId())}<text:p text:style-name="${style}">${node.getContent().replace(/(<text:line-break\/>)\n/gm, '$1')}</text:p>`;
   },
 
   inline_quoted: ({node}) => {
@@ -55,7 +61,7 @@ module.exports = {
     if (node.getType() === 'mark') {
       styleName = 'CodeExergue';
     }
-    else if (node.getType() === 'monospaced') {
+    else if (node.getType() === 'monospaced' && node.getParent().node_name !== 'section') {
       styleName = 'CodeDansTexte';
     }
     else if (node.getType() === 'strong') {
@@ -89,10 +95,10 @@ module.exports = {
     let text = node.getText();
 
     if (node.getType() === 'ref') {
-      pre = `<text:bookmark text:name="${node.getId()}" />`;
+      pre = bookmark(node.getId());
     }
     else if (node.getType() === 'xref') {
-      const ref = node.getAttribute('fragment') ? node.getAttribute('fragment') : basename(dirname(node.getAttribute('path')))
+      const ref = node.getAttribute('fragment') ? node.getAttribute('fragment') : basename(dirname(node.getAttribute('path')));
 
       xref = ` xlink:href="#ref-${ref}"  text:visited-style-name="Visited_20_Internet_20_Link"`;
       styleName = 'Internet_20_link';
@@ -128,7 +134,7 @@ module.exports = {
 
     if (node.getTitle()) {
       const styleName = node.getParent().node_name === 'admonition' ? 'Remarque' : 'CodeTitre';
-      title = `<text:p text:style-name="${styleName}">${node.getTitle()}</text:p>`;
+      title = `${bookmark(node.getId())}<text:p text:style-name="${styleName}">${node.getCaptionedTitle()}</text:p>`;
     }
 
     const code = node.getContent().split('\n').map(line => {
@@ -145,7 +151,7 @@ module.exports = {
 <text:p text:style-name="${styleName}">${item.getText()}</text:p>
 </text:list-item>`).join('');
 
-    return `<text:list text:style-name="List_20_1">${items}</text:list>`;
+    return `${bookmark(node.getId())}<text:list text:style-name="List_20_1">${items}</text:list>`;
   },
 
   olist: ({node}) => {
@@ -159,7 +165,7 @@ module.exports = {
       const text = !defs.getBlocks().length ? `<text:line-break/><text:tab/>${defs.getText()}` : '';
       const blocks = defs.getBlocks().length ? defs.getContent() : '';
 
-      return `<text:p text:style-name="TexteCourant">
+      return `${bookmark(node.getId())}<text:p text:style-name="TexteCourant">
 <text:span text:style-name="T7"><text:tab/>${terms.map(d => d.getText()).join(', ')}</text:span>${text}</text:p>${blocks}`;
     }).join('');
   },
@@ -180,7 +186,7 @@ module.exports = {
     let pre = '';
 
     if (node.getTitle()) {
-      pre = `<text:h text:style-name="RemarqueTitre" text:outline-level="7">${node.getTitle()}</text:h>`;
+      pre = `${bookmark(node.getId())}<text:h text:style-name="RemarqueTitre" text:outline-level="7">${node.getTitle()}</text:h>`;
     }
 
     return `${pre}${node.getContent()}`;
@@ -195,8 +201,8 @@ module.exports = {
   },
 
   image: ({node}) => {
-    const uri = node.getImageUri(node.getAttribute('target'));
-    const caption = node.getTitle() ? `<text:p text:style-name="RemarqueFigureLegende">${node.getTitle()}</text:p>` : '';
+    const uri = join(node.getDocument().getAttribute('chapterid'), node.getAttribute('target'));
+    const caption = node.getTitle() ? `<text:p text:style-name="RemarqueFigureLegende">${node.getCaptionedTitle()}</text:p>` : '';
 
     return `<text:p text:style-name="RemarqueFigureNumero">(${uri})</text:p>${caption}`;
   },
@@ -214,10 +220,36 @@ module.exports = {
   },
 
   table: ({node}) => {
-    return '';
+    let caption = '';
+    let header = '';
+
+    if (node.getTitle()) {
+      caption = `<text:p text:style-name="TableauTitre">${node.getCaptionedTitle()}</text:p>`;
+    }
+
+    if (node.rows.head.length) {
+      const cols = node.rows.head[0].map((cell) => {
+        return `<table:table-cell table:style-name="TableauTitreColonne" office:value-type="string">${cell.$content().indexOf('<text:p') === 0 ? cell.$content() : `<text:p>${cell.$content()}</text:p>`}</table:table-cell>`;
+      });
+
+      header = `${cols.map(d => '<table:table-column />')}<table:table-row>${cols.join('')}</table:table-row>`;
+    }
+
+
+    const rows = node.rows.body.map(row => {
+      const cols = row.map((cell, i) => {
+        return `<table:table-cell table:style-name="TableauCorps" office:value-type="string">${cell.$content().indexOf('<text:p') === 0 ? cell.$content().toString() : `<text:p>${cell.$content()}</text:p>`}</table:table-cell>`;
+      }).join('');
+
+      return `<table:table-row>${cols}</table:table-row>`;
+    });
+
+    return `${bookmark(node.getId())}${caption}<table:table table:style-name="Tableau1">${header}${rows.join('')}</table:table>`;
   },
 
-  thematic_break: ({node}) => {
+  embedded: ({node}) => node.getContent(),
+
+  thematic_break: () => {
     return '<text:p text:style-name="Horizontal_20_Line"/>';
   },
 };
