@@ -1,5 +1,7 @@
 'use strict';
 
+const {dirname, basename} = require('path');
+
 module.exports = {
   document: ({node, styles}) => {
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -7,7 +9,7 @@ module.exports = {
   <office:meta>
     <meta:generator>asciidoctor-converter-opendocument</meta:generator>
     <dc:title>${node.getDocument().getDoctitle()}</dc:title>
-    <meta:creation-date>${node.getDocument().getRevdate()}</meta:creation-date>
+    <meta:creation-date>${node.getDocument().getAttribute('docdatetime')}</meta:creation-date>
     <dc:language>${node.getDocument().getAttribute('lang')}</dc:language>
     <meta:editing-cycles>1</meta:editing-cycles>
     <meta:editing-duration>P0D</meta:editing-duration>
@@ -30,12 +32,14 @@ module.exports = {
   section: ({node}) => {
     const style = node.getLevel() === 1 ? 'ChapitreTitre' : `TitreNiveau${node.getLevel()-1}`;
     let pre = '';
+    let id = node.getId();
 
     if (node.getLevel() === 1 && node.getDocument().hasAttribute('chapternumber')) {
+      id = node.getDocument().getAttribute('chapterid');
       pre = `<text:p text:style-name="ChapitreNumero">${node.getDocument().getAttribute('chapternumber')}</text:p>`;
     }
 
-    return `${pre}<text:h text:style-name="${style}" text:outline-level="${node.getLevel()}">${node.getTitle()}</text:h>${node.getContent()}`;
+    return `${pre}<text:h text:style-name="${style}" text:outline-level="${node.getLevel()}"><text:bookmark text:name="ref-${id}" />${node.getTitle()}</text:h>${node.getContent()}`;
   },
   paragraph: ({node}) => {
     const style = node.getParent().node_name === 'admonition' ? 'Remarque' : 'TexteCourant';
@@ -79,17 +83,31 @@ module.exports = {
     // node.type xref, ref, link
     let pre = '';
     let post = '';
+    let xref = '';
+    let styleName = node.getRole();
+    let tag = 'text:a';
+    let text = node.getText();
 
-    if (node.getRole() === 'bare') {
-      pre = '<![CDATA[';
-      post = ']]>';
+    if (node.getType() === 'ref') {
+      pre = `<text:bookmark text:name="${node.getId()}" />`;
+    }
+    else if (node.getType() === 'xref') {
+      const ref = node.getAttribute('fragment') ? node.getAttribute('fragment') : basename(dirname(node.getAttribute('path')))
+
+      xref = ` xlink:href="#ref-${ref}"  text:visited-style-name="Visited_20_Internet_20_Link"`;
+      styleName = 'Internet_20_link';
+    }
+    else if (node.getType() === 'link') {
+      xref = ` xlink:href="${node.getTarget()}" text:visited-style-name="Visited_20_Internet_20_Link"`;
+      styleName = 'Internet_20_link';
+      text = node.getTarget();
     }
 
-    if (node.getText()) {
-      return `<text:span text:style-name="${node.getRole()}">${pre}${node.getText()}${post}</text:span>`;
+    if (text) {
+      return `<${tag} xlink:type="simple" text:style-name="${styleName}"${xref}>${pre}${text}${post}</${tag}>`;
     }
 
-    return '';
+    return `${pre}`;
   },
 
   inline_break: ({node}) => {
@@ -114,7 +132,7 @@ module.exports = {
     }
 
     const code = node.getContent().split('\n').map(line => {
-      return `<text:p text:style-name="${styleName}">${line.replace(/&&/g, '&amp;&amp;').replace(/(^\s+|\s+(<text:span))/g, (m, chars, after) => `<text:s text:c="${chars.length}"/>${after || ''}`)}</text:p>`;
+      return `<text:p text:style-name="${styleName}">${line.replace(/&&/g, '&amp;&amp;').replace(/(\s{2,})/g, (m, chars) => `<text:s text:c="${chars.length}"/>`)}</text:p>`;
     }).join('');
 
     return `${title}${code}`;
