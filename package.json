@@ -1,6 +1,6 @@
 {
   "name": "asciidoctor-converter-opendocument",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-alpha.7",
   "description": "Convert Asciidoc documents to OpenDocument (ODT) files.",
   "main": "index.js",
   "dependencies": {},
