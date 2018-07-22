@@ -30,6 +30,8 @@ module.exports = {
   ${styles.fonts || ''}
   ${styles.styles || ''}
   <office:body>
+    <text:tracked-changes text:track-changes="true">
+    </text:tracked-changes>
     <office:text>${node.getContent()}</office:text>
   </office:body>
 </office:document>`;
@@ -48,7 +50,7 @@ module.exports = {
     return `${bookmark(id)}${pre}<text:h text:style-name="${style}" text:outline-level="${node.getLevel()}">${node.getTitle()}</text:h>${node.getContent()}`;
   },
   paragraph: ({node}) => {
-    const style = node.getParent().node_name === 'admonition' ? 'Remarque' : 'TexteCourant';
+    const style = ['admonition', 'dlist'].includes(node.getParent().node_name) ? 'Remarque' : 'TexteCourant';
 
     return `${bookmark(node.getId())}<text:p text:style-name="${style}">${node.getContent().replace(/(<text:line-break\/>)\n/gm, '$1')}</text:p>`;
   },
@@ -145,7 +147,7 @@ module.exports = {
   },
 
   ulist: ({node}) => {
-    const styleName = node.getParent().node_name === 'admonition' ? 'RemarquePuce' : 'ListeANumero';
+    const styleName = ['admonition', 'dlist'].includes(node.getParent().node_name) ? 'RemarquePuce' : 'ListeANumero';
 
     const items = node.getItems().map(item => `<text:list-item>
 <text:p text:style-name="${styleName}">${item.getText()}</text:p>
@@ -155,18 +157,18 @@ module.exports = {
   },
 
   olist: ({node}) => {
-    const styleName = node.getParent().node_name === 'admonition' ? 'RemarqueNumero' : 'ListeANumero';
+    const styleName = ['admonition', 'dlist'].includes(node.getParent().node_name) ? 'RemarqueNumero' : 'ListeANumero';
 
     return node.getItems().map((item, i) => `<text:p text:style-name="${styleName}">${i+1}.<text:tab/>${item.getText()}</text:p>`).join('');
   },
 
   dlist: ({node}) => {
     return node.getItems().map(([terms, defs], type) => {
-      const text = !defs.getBlocks().length ? `<text:line-break/><text:tab/>${defs.getText()}` : '';
+      const text = !defs.getBlocks().length ? defs.getText() : '';
       const blocks = defs.getBlocks().length ? defs.getContent() : '';
 
-      return `${bookmark(node.getId())}<text:p text:style-name="TexteCourant">
-<text:span text:style-name="T7"><text:tab/>${terms.map(d => d.getText()).join(', ')}</text:span>${text}</text:p>${blocks}`;
+      return `${bookmark(node.getId())}<text:h text:style-name="RemarqueTitre">${terms.map(d => d.getText()).join(', ')}</text:h>
+<text:p text:style-name="Remarque">${text}</text:p>${blocks}`;
     }).join('');
   },
 
@@ -252,4 +254,6 @@ module.exports = {
   thematic_break: () => {
     return '<text:p text:style-name="Horizontal_20_Line"/>';
   },
+
+  inline_indexterm: ({node}) => node.getText(),
 };

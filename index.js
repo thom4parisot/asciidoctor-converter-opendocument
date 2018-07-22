@@ -15,7 +15,7 @@ module.exports = function ConverterODT(Asciidoctor, {styles}) {
       const operation = transforms[transform || node.node_name];
 
       if (!operation) {
-        throw new Error(`${operation} operation does not exist. (${transform}, ${node.context})`);
+        throw new Error(`${operation} operation does not exist. (${transform}, ${node.node_name}, ${node.context})`);
       }
 
       return operation({ node, styles });
