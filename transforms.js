@@ -130,6 +130,11 @@ module.exports = {
     return `<text:span text:style-name="CodeDansTexte">${node.getText()}</text:span>`;
   },
 
+  inline_menu: ({node}) => {
+    //todo take care of node.getAttribute('submenus') (an array of strings)
+    return `<text:span text:style-name="Menu">${node.getAttribute('menu')} / ${node.getAttribute('menuitem')}</text:span>`;
+  },
+
   listing: ({node}) => {
     let title = '';
     const styleName = node.getParent().node_name === 'admonition' ? 'RemarqueCode' : 'Code';
