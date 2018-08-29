@@ -41,10 +41,11 @@ module.exports = {
     const style = node.getLevel() === 1 ? 'ChapitreTitre' : `TitreNiveau${node.getLevel()-1}`;
     let pre = '';
     let id = node.getId();
+    const doc = node.getDocument();
 
-    if (node.getLevel() === 1 && node.getDocument().hasAttribute('chapternumber')) {
-      id = node.getDocument().getAttribute('chapterid');
-      pre = `<text:p text:style-name="ChapitreNumero">${node.getDocument().getAttribute('chapternumber')}</text:p>`;
+    if (node.getLevel() === 1 && doc.hasAttribute('chapter-number')) {
+      id = doc.getAttribute('chapterid');
+      pre = `<text:p text:style-name="ChapitreNumero">${doc.getAttribute('chapter-number') || doc.getAttribute('appendix-number')}</text:p>`;
     }
 
     return `${bookmark(id)}${pre}<text:h text:style-name="${style}" text:outline-level="${node.getLevel()}">${node.getTitle()}</text:h>${node.getContent()}`;
