@@ -209,8 +209,15 @@ module.exports = {
   },
 
   image: ({node}) => {
-    const uri = join(node.getDocument().getAttribute('chapterid'), node.getAttribute('target'));
-    const caption = node.getTitle() ? `<text:p text:style-name="RemarqueFigureLegende">${node.getCaptionedTitle()}</text:p>` : '';
+    const doc = node.getDocument();
+    const uri = join(doc.getAttribute('chapterid'), node.getAttribute('target'));
+    const prefix = `${doc.getAttribute('figure-caption')}<text:s text:c="1"/>${doc.getAttribute('chapter-number') || doc.getAttribute('appendix-number')}-${node.number}`;
+    const caption = node.getTitle() ? `<text:p text:style-name="RemarqueFigureLegende"><text:span text:style-name="Numero">${prefix}.</span> ${node.getTitle()}</text:p>` : '';
+
+    if (!String(node.number)) {
+      // eslint-ignore-next no-console
+      console.error(`${uri} does not have any caption.`);
+    }
 
     return `<text:p text:style-name="RemarqueFigureNumero">(${uri})</text:p>${caption}`;
   },
