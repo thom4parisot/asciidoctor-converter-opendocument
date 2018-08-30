@@ -45,7 +45,7 @@ module.exports = {
 
     if (node.getLevel() === 1 && doc.hasAttribute('chapter-number')) {
       id = doc.getAttribute('chapterid');
-      pre = `<text:p text:style-name="ChapitreNumero">${doc.getAttribute('chapter-number') || doc.getAttribute('appendix-number')}</text:p>`;
+      pre = `<text:p text:style-name="ChapitreNumero">${doc.getAttribute('appendix-number') || doc.getAttribute('chapter-number')}</text:p>`;
     }
 
     return `${bookmark(id)}${pre}<text:h text:style-name="${style}" text:outline-level="${node.getLevel()}">${node.getTitle()}</text:h>${node.getContent()}`;
@@ -211,8 +211,8 @@ module.exports = {
   image: ({node}) => {
     const doc = node.getDocument();
     const uri = join(doc.getAttribute('chapterid'), node.getAttribute('target'));
-    const prefix = `${doc.getAttribute('figure-caption')}<text:s text:c="1"/>${doc.getAttribute('chapter-number') || doc.getAttribute('appendix-number')}-${node.number}`;
-    const caption = node.getTitle() ? `<text:p text:style-name="RemarqueFigureLegende"><text:span text:style-name="Numero">${prefix}.</span> ${node.getTitle()}</text:p>` : '';
+    const prefix = `${doc.getAttribute('figure-caption')}<text:s text:c="1"/>${doc.getAttribute('appendix-number') || doc.getAttribute('chapter-number')}-${node.number}`;
+    const caption = node.getTitle() ? `<text:p text:style-name="RemarqueFigureLegende"><text:span text:style-name="Numero">${prefix}.</text:span> ${node.getTitle()}</text:p>` : '';
 
     if (!String(node.number)) {
       // eslint-ignore-next no-console
