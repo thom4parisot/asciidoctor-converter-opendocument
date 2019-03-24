@@ -22,5 +22,5 @@ module.exports = function ConverterODT(Asciidoctor, {styles}) {
     }
   }
 
-  Asciidoctor.Converter.Factory.$register(new ODTConverter('odt'), ['odt']);
+  Asciidoctor.ConverterFactory.register(new ODTConverter('odt'), ['odt']);
 };

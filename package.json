@@ -4,6 +4,9 @@
   "description": "Convert Asciidoc documents to OpenDocument (ODT) files.",
   "main": "index.js",
   "dependencies": {},
+  "peerDependencies": {
+    "@asciidoctor/core": ">=2.0.0-rc.1 <3"
+  },
   "devDependencies": {
     "eslint": "^5.0.1"
   },
